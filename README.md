@@ -10,6 +10,6 @@ Highlights include:
 
 * Discard Protocol: RFC 863, a network equivalent of /dev/null
 
-* QOTD: RFC 865, a 512 character or less quote of the day
-
 * CHARGEN: RFC 864, provides unlimited numbers of ASCII characters.
+
+* QOTD: RFC 865, a 512 character or less quote of the day
