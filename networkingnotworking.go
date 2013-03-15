@@ -5,31 +5,61 @@ import (
 	"net"
 	"os"
 )
+var asciichars = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintf(os.Stderr, "Usage: [discard|echo]", os.Args[0])
-		os.Exit(1)
-	}
-	name := os.Args[1]
+	go echoServer(":8007")
+	go discardServer(":8009")
+	chargenServer(":8019")
+}
 
-	if name == "discard" {
-		tcpAddr, err := net.ResolveTCPAddr("ip4", ":9000")
-		checkError(err)
+func echoServer(port string) {
+	tcpAddr, err := net.ResolveTCPAddr("ip4", port)
+	checkError(err)
 
-		listener, err := net.ListenTCP("tcp", tcpAddr)
-		checkError(err)
+	listener, err := net.ListenTCP("tcp", tcpAddr)
+	checkError(err)
 
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				continue
-			}
-			go handleDiscard(conn)
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			continue
 		}
+		go handleEcho(conn)
 	}
+}
 
-	os.Exit(0)
+func discardServer(port string) {
+	tcpAddr, err := net.ResolveTCPAddr("ip4", port)
+	checkError(err)
+
+	listener, err := net.ListenTCP("tcp", tcpAddr)
+	checkError(err)
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			continue
+		}
+		go handleDiscard(conn)
+	}
+}
+
+func chargenServer(port string) {
+	tcpAddr, err := net.ResolveTCPAddr("ip4", port)
+	checkError(err)
+
+	listener, err := net.ListenTCP("tcp", tcpAddr)
+	checkError(err)
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			continue
+		}
+		go handleChargen(conn)
+	}
 }
 
 func handleDiscard(conn net.Conn) {
@@ -37,6 +67,33 @@ func handleDiscard(conn net.Conn) {
 	var b [512]byte
 	for {
 		conn.Read(b[0:])
+	}
+}
+
+func handleChargen(conn net.Conn) {
+	var b [80]byte
+	copy(b[:], asciichars)
+	defer conn.Close()
+	conn.Write(b[0:72])
+
+	var n [1]byte
+	copy(n[:], "\n")
+	conn.Write(n[:])
+}
+
+func handleEcho(conn net.Conn) {
+	defer conn.Close()
+	var b [512]byte
+
+	n, err := conn.Read(b[0:])
+
+	if err != nil {
+		return
+	}
+
+	_, err2 := conn.Write(b[0:n])
+	if err2 != nil {
+		return
 	}
 }
 
