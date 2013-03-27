@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 )
-var asciichars = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-
+var asciibuf [94]byte
 
 func main() {
+	copy(asciibuf[:], "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~")
+
 	go echoServer(":8007")
 	go discardServer(":8009")
 	chargenServer(":8019")
@@ -71,14 +73,14 @@ func handleDiscard(conn net.Conn) {
 }
 
 func handleChargen(conn net.Conn) {
-	var b [80]byte
-	copy(b[:], asciichars)
 	defer conn.Close()
-	conn.Write(b[0:72])
-
 	var n [1]byte
 	copy(n[:], "\n")
-	conn.Write(n[:])
+	for i := 0; i < 23; i++ {
+		conn.Write(asciibuf[i:i + 72])
+		conn.Write(n[:])
+		time.Sleep(500 * time.Millisecond)
+	}
 }
 
 func handleEcho(conn net.Conn) {
